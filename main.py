@@ -1,6 +1,8 @@
 import tcod
 
-from actions import EscapeAction, MovementAction
+from engine import Engine
+from entity import Entity
+from game_map import GameMap
 from input_handlers import EventHandler
 
 
@@ -8,14 +10,22 @@ def main() -> None:
     screen_width = 80  # Setting up the window specs.
     screen_height = 50
 
-    player_x = int(screen_width / 2)  # This tracks and stores the players x coords.
-    player_y = int(screen_height / 2)  # This tracks and stores the players y coords.
+    map_width = 80
+    map_height = 45
 
     tileset = tcod.tileset.load_tilesheet(  # Telling TCOD which tileset to use.
         "dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
     )
 
     event_handler = EventHandler()  # Receives events and processes them.
+
+    player = Entity(int(screen_width / 2), int(screen_height / 2), "@", (255, 255, 255))  # initializes the player.
+    npc = Entity(int(screen_width / 2 - 5), int(screen_height / 2), "@", (255, 255, 0))  # initializes a new npc.
+    entities = {npc, player}
+
+    game_map = GameMap(map_width, map_height)
+
+    engine = Engine(entities=entities, event_handler=event_handler, game_map=game_map, player=player)
 
     with tcod.context.new_terminal(  # This part actually creates the screen.
         screen_width,
@@ -26,24 +36,11 @@ def main() -> None:
     ) as context:
         root_console = tcod.Console(screen_width, screen_height, order="F")  # This creates the "console" that we draw on. Order reverses the x and y in numpy (default is y, x)
         while True:  # Sets the "game loop" that exists until we call system exit
-            root_console.print(x=player_x, y=player_y, string="@")  # Prints out the @ symbol on the console, calls back to player_x and player_y to get coord info.
+            engine.render(console=root_console, context=context)  # Pulls the need info from Engine, and renders it on the console.
 
-            context.present(root_console)  # Nothing would print without this line
+            events = tcod.event.wait()
 
-            root_console.clear()
-
-            for event in tcod.event.wait():  # Gives us a way to exit the window.
-                action = event_handler.dispatch(event)  # Gets the events from event_handler and dispatches them to their proper place.
-
-                if action is None:  # If no key was pressed skip over the rest of the loop.
-                    continue
-
-                if isinstance(action, MovementAction):  # Grabs the dx, dy vars from the MovementAction event and adds them to the players current position, moving the player.
-                    player_x += action.dx
-                    player_y += action.dy
-
-                elif isinstance(action, EscapeAction):  # If the user hits the escape key, the window should close.
-                    raise SystemExit()
+            engine.handle_events(events)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from typing import Optional
 
 import tcod.event
 
-from actions import Action, EscapeAction, MovementAction
+from actions import Action, EscapeAction, BumpAction
 
 
 class EventHandler(tcod.event.EventDispatch[Action]):  # Sends events to their proper method based on the event.
@@ -15,13 +15,13 @@ class EventHandler(tcod.event.EventDispatch[Action]):  # Sends events to their p
         key = event.sym  # key holds the actual key pressed.
 
         if key == tcod.event.K_UP:  # Creates a MovementAction for the key pressed, and defines a direction based off of that key pressed.
-            action = MovementAction(dx=0, dy=-1)
+            action = BumpAction(dx=0, dy=-1)
         elif key == tcod.event.K_DOWN:
-            action = MovementAction(dx=0, dy=1)
+            action = BumpAction(dx=0, dy=1)
         elif key == tcod.event.K_LEFT:
-            action = MovementAction(dx=-1, dy=0)
+            action = BumpAction(dx=-1, dy=0)
         elif key == tcod.event.K_RIGHT:
-            action = MovementAction(dx=1, dy=0)
+            action = BumpAction(dx=1, dy=0)
 
         elif key == tcod.event.K_ESCAPE:  # If the user presses the escape key, will return EscapeAction
             action = EscapeAction()

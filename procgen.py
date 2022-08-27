@@ -10,7 +10,7 @@ from game_map import GameMap
 import tile_types
 
 if TYPE_CHECKING:
-    from entity import Entity
+    from engine import Engine
 
 
 class RectangularRoom:
@@ -50,7 +50,8 @@ def place_entities(
         x = random.randint(room.x1 + 1, room.x2 - 1)
         y = random.randint(room.y1 + 1, room.y2 - 1)
 
-        if not any(entity.x == x and entity.y == y for entity in dungeon.entities):  # Does quick check to make sure there is no entity where it is placing the new one.
+        if not any(entity.x == x and entity.y == y for entity in
+                   dungeon.entities):  # Does quick check to make sure there is no entity where it is placing the new one.
             if random.random() < 0.8:
                 entity_factories.rat.spawn(dungeon, x, y)
             else:
@@ -83,14 +84,16 @@ def generate_dungeon(
         map_width: int,  # The width of the GameMap.
         map_height: int,  # The height of the GameMap.
         max_monsters_per_room: int,
-        player: Entity,  # Player Entity.
+        engine: Engine,  # Player Entity.
 ) -> GameMap:
-    dungeon = GameMap(map_width, map_height, entities=[player])  # Generates new GameMap
+    player = engine.player
+    dungeon = GameMap(engine, map_width, map_height, entities=[player])  # Generates new GameMap
 
     rooms: List[RectangularRoom] = []  # List of all rooms.
 
     for r in range(max_rooms):  # Iterates from 0 to max rooms - 1.
-        room_width = random.randint(room_min_size, room_max_size)  # Uses given parameters to set the rooms width and height.
+        room_width = random.randint(room_min_size,
+                                    room_max_size)  # Uses given parameters to set the rooms width and height.
         room_height = random.randint(room_min_size, room_max_size)
 
         x = random.randint(0, dungeon.width - room_width - 1)
@@ -99,21 +102,24 @@ def generate_dungeon(
         new_room = RectangularRoom(x, y, room_width,
                                    room_height)  # RectangularRoom makes rectangles easier to work with.
 
-        if any(new_room.intersects(other_room) for other_room in rooms):  # Runs through the other rooms to see if they intersect with the current room.
+        if any(new_room.intersects(other_room) for other_room in
+               rooms):  # Runs through the other rooms to see if they intersect with the current room.
             continue  # This room intersects so go to the next attempt.
         # If there are no intersections the room is valid.
 
         dungeon.tiles[new_room.inner] = tile_types.floor  # Dig out this rooms inner area.
 
         if len(rooms) == 0:  # The first room the player starts in.
-            player.x, player.y = new_room.center
+            player.place(*new_room.center, dungeon)
+
 
         else:  # All rooms after the first.
             for x, y in tunnel_between(rooms[-1].center,
                                        new_room.center):  # Dig out a tunnel between this room and the previous.
                 dungeon.tiles[x, y] = tile_types.floor
 
-        place_entities(new_room, dungeon, max_monsters_per_room)  # Takes three args, the room thats being made, dungeon which holds the entities, and max monsters so it knows how many to make.
+        place_entities(new_room, dungeon,
+                       max_monsters_per_room)  # Takes three args, the room thats being made, dungeon which holds the entities, and max monsters so it knows how many to make.
 
         rooms.append(new_room)  # Append the new room to the list.
 
